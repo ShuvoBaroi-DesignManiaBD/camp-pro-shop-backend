@@ -20,5 +20,22 @@ router.get(
   ProductControllers.getAllProducts, 
 );
 
+router.get(
+  '/:id', 
+  ProductControllers.getAProduct, 
+);
+
+router.patch(
+  '/:id',
+  auth(USER_ROLE.admin),
+  validateRequest(ProductValidation.productUpdateSchema), 
+  ProductControllers.updateAProduct, 
+);
+
+router.delete(
+  '/:id',
+  auth('admin'),
+  ProductControllers.deleteAProduct,
+);
 
 export const productRoutes = router;

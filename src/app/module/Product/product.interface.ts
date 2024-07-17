@@ -16,3 +16,7 @@ export interface IProduct extends Document {
   isStock: boolean;
   isDeleted: boolean;
 }
+
+
+// Create an array of IProduct keys
+export const IProductKeys: string[] = ['name', 'price', 'stockQuantity', 'description', 'category', 'ratings', 'images', 'isStock', 'isDeleted'];

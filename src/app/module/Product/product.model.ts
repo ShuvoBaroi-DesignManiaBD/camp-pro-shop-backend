@@ -5,7 +5,7 @@ import { IProduct, ProductImage } from './product.interface';
 const productImageSchema = new Schema<ProductImage>({
   url: { type: String, required: [true, 'URL is required'] },
   alt: { type: String }
-});
+}, { _id: false });
 
 const productSchema = new Schema<IProduct>({
   name: { type: String, required: [true, 'Name is required'], unique: true },
