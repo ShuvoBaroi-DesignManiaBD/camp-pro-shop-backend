@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from "mongoose";
 import { IProduct } from "./product.interface";
-import { Customer } from "../Customer/customer.model";
 import Product from "./product.model";
 import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
+import QueryBuilder from "../../builder/QueryBuilder";
+import DataNotFoundError from "../../errors/DataNotFoundError";
 
 const createProduct = async (payload: IProduct) => {
   const session = await mongoose.startSession();
@@ -31,6 +32,24 @@ const createProduct = async (payload: IProduct) => {
   }
 };
 
+const getAProduct = async (id: string) => {
+  const product = await Product.findById(id);
+
+  if (!product || product.isDeleted) {
+    throw new DataNotFoundError()
+  }
+
+  return product;
+};
+
+const getAllProducts = async () => {
+  const productsQuery = new QueryBuilder(Product.find({isDeleted: false}), {});
+  const result = await productsQuery.modelQuery;
+  return result;
+};
+
 export const ProductServices = {
   createProduct,
+  getAllProducts,
+  getAProduct
 };
