@@ -31,6 +31,8 @@ const createCustomer = async (payload: TUser) => {
   }
 };
 
+
+
 export const UserServices = {
   createCustomer
 }

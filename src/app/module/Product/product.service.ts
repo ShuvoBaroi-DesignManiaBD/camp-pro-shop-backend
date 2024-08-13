@@ -7,6 +7,7 @@ import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
 import QueryBuilder from "../../builder/QueryBuilder";
 import DataNotFoundError from "../../errors/DataNotFoundError";
+import { ProductSearchableFields } from "./product.constant";
 
 const createProduct = async (payload: IProduct) => {
   const session = await mongoose.startSession();
@@ -42,11 +43,15 @@ const getAProduct = async (id: string) => {
   return product;
 };
 
-const getAllProducts = async () => {
+const getAllProducts = async (query: Record<string, unknown>) => {
   const productsQuery = new QueryBuilder(
     Product.find({ isDeleted: false }),
-    {}
-  );
+    query
+  ).search(ProductSearchableFields)
+  .filter()
+  .sort()
+  .paginate()
+  .fields();
   const result = await productsQuery.modelQuery;
   return result;
 };
