@@ -44,17 +44,30 @@ const getAProduct = async (id: string) => {
 };
 
 const getAllProducts = async (query: Record<string, unknown>) => {
-  const productsQuery = new QueryBuilder(
+  const baseQuery = new QueryBuilder(
     Product.find({ isDeleted: false }),
     query
-  ).search(ProductSearchableFields)
-  .filter()
-  .sort()
-  .paginate()
-  .fields();
-  const result = await productsQuery.modelQuery;
-  return result;
+  )
+    .search(ProductSearchableFields)
+    .filter()
+    .sort()
+    .fields();
+
+  // Clone the query for counting documents
+  const countQuery = baseQuery.modelQuery.clone();
+  
+  // Count the total number of documents matching the criteria
+  const totalMatchingDocuments = await countQuery.countDocuments().exec();
+
+  // Apply pagination to the original query
+  baseQuery.paginate();
+
+  // Get the final result with pagination
+  const result = await baseQuery.modelQuery.exec();
+
+  return { result, totalProducts: totalMatchingDocuments };
 };
+
 
 const updateAProduct = async (id: string, payload: Partial<IProduct>) => {
   // Finding the product by ID
