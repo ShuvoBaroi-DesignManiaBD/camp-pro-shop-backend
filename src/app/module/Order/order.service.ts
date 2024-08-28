@@ -60,7 +60,7 @@ const captureOrder = async ({ orderId }: any) => {
 
     const request = new paypalConfigs.paypal.orders.OrdersCaptureRequest(orderId);
     request.requestBody({});
-    const capture = await paypalConfigs.client.execute(request;
+    const capture = await paypalConfigs.client.execute(request);
 
     if (capture?.statusCode === 201) {
       const order = await Order.findOne({ transactionId: `TXN-${orderId}` }).session(session); // Use session
