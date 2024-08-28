@@ -6,7 +6,7 @@ import AppError from "../errors/AppError";
 import catchAsync from "../utils/catchAsync";
 import { TUserRole } from "../module/User/user.interface";
 import { User } from "../module/User/user.model";
-import { createToken, verifyToken } from "../module/auth/auth.utils";
+import { createToken, verifyToken } from "../module/Auth/auth.utils";
 
 const auth = (...requiredRoles: TUserRole[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -14,8 +14,8 @@ const auth = (...requiredRoles: TUserRole[]) => {
     let userRole;
     let userDeleted = false;
     let JwtPayload;
-    let accessToken = req.cookies?.accessToken;
-    const refreshToken = req.cookies?.refreshToken;
+    let accessToken = req.cookies?.accessToken || req.headers?.accesstoken;
+    const refreshToken = req.cookies?.refreshToken || req.headers?.refreshToken;
 
     // checking if the token is missing
     if (!accessToken && !refreshToken) {
