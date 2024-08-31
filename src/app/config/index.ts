@@ -13,4 +13,7 @@ export default {
   jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
   paypal_client_id: process.env.PAYPAL_CLIENT_ID,
   paypal_client_secret: process.env.PAYPAL_CLIENT_SECRET,
+  STORE_ID: process.env.STORE_ID,
+  STORE_PASSWD: process.env.STORE_PASSWD,
+  IS_LIVE: false,
 };

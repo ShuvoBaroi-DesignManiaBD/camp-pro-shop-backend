@@ -8,6 +8,7 @@ import httpStatus from "http-status";
 import QueryBuilder from "../../builder/QueryBuilder";
 import DataNotFoundError from "../../errors/DataNotFoundError";
 import { ProductSearchableFields } from "./product.constant";
+import { cartItem } from "../Order/order.interface";
 
 const createProduct = async (payload: IProduct) => {
   const session = await mongoose.startSession();
@@ -44,10 +45,7 @@ const getAProduct = async (id: string) => {
 };
 
 const getAllProducts = async (query: Record<string, unknown>) => {
-  const baseQuery = new QueryBuilder(
-    Product.find({ isDeleted: false }),
-    query
-  )
+  const baseQuery = new QueryBuilder(Product.find({ isDeleted: false }), query)
     .search(ProductSearchableFields)
     .filter()
     .sort()
@@ -55,7 +53,7 @@ const getAllProducts = async (query: Record<string, unknown>) => {
 
   // Clone the query for counting documents
   const countQuery = baseQuery.modelQuery.clone();
-  
+
   // Count the total number of documents matching the criteria
   const totalMatchingDocuments = await countQuery.countDocuments().exec();
 
@@ -68,7 +66,7 @@ const getAllProducts = async (query: Record<string, unknown>) => {
   return { result, totalProducts: totalMatchingDocuments };
 };
 
-
+// ======================= Update operations =======================
 const updateAProduct = async (id: string, payload: Partial<IProduct>) => {
   // Finding the product by ID
   const product = await Product.findById(id);
@@ -100,6 +98,64 @@ const updateAProduct = async (id: string, payload: Partial<IProduct>) => {
   return result;
 };
 
+const updateProductsStock = async (products: cartItem[]) => {
+  // Start a session and transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Iterate over each product
+    for (const product of products) {
+      console.log("Processing product: ", product);
+
+      // Convert product.id to ObjectId
+      const productId = new mongoose.Types.ObjectId(product.id);
+
+      // Find the product using session
+      const foundProduct = await Product.findById(productId).session(session);
+      console.log("Found Product:", foundProduct);
+
+      if (!foundProduct) {
+        throw new AppError(
+          httpStatus.NOT_FOUND,
+          `Product with ID ${product.id} not found!`
+        );
+      }
+
+      const newStockQuantity = foundProduct.stockQuantity - product.quantity;
+
+      // Ensure stock quantity does not go below zero
+      if (newStockQuantity < 0) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          `Insufficient stock for product with ID ${product.id}!`
+        );
+      }
+
+      // Update stock quantity using session
+      await Product.findByIdAndUpdate(
+        productId,
+        { stockQuantity: newStockQuantity },
+        { new: true, session }
+      );
+    }
+
+    // Commit the transaction after all operations
+    await session.commitTransaction();
+    console.log("Transaction committed successfully.");
+  } catch (err) {
+    // Abort the transaction in case of an error
+    await session.abortTransaction();
+    console.error("Transaction aborted due to an error:", err);
+    throw err; // Re-throw the error after aborting the transaction
+  } finally {
+    // End the session
+    session.endSession();
+  }
+};
+
+// ======================= Update operations =======================
+
 const deleteAProduct = async (id: string) => {
   const result = await Product.findByIdAndUpdate(
     id,
@@ -117,5 +173,6 @@ export const ProductServices = {
   getAllProducts,
   getAProduct,
   updateAProduct,
-  deleteAProduct
+  deleteAProduct,
+  updateProductsStock
 };

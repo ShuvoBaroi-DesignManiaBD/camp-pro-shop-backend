@@ -27,6 +27,10 @@ const orderSchema = new Schema<IOrder>({
   transactionId: { type: String },
   status: { type: String, enum: ['pending', 'paid'] }, // Enum defined as in the interface
   payerDetails: { type: Object }, // Added payer field as an optional object
+  paidBy: { type: String },
+  bank_tran_id: { type: String },
+  tran_date: { type: String },
+  currency_rate: { type: String },
 }, { timestamps: true });
 
 const Order = model<IOrder>('Order', orderSchema);

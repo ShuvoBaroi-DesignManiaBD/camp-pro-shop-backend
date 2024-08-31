@@ -1,5 +1,7 @@
 import { Document } from 'mongoose';
 
+export type TPayment = 'paypal' | 'sslcommerz';
+
 export interface cartItem {
   id: string;
   quantity: number;
@@ -26,5 +28,9 @@ export interface IOrder extends Document {
   transactionId?: string;
   status?: 'pending'| 'paid';
   payerDetails?: Object;
+  paidBy?:string,
+  bank_tran_id?:string,
+  tran_date?:string,
+  currency_rate?:string,
 }
 
