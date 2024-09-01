@@ -2,7 +2,7 @@
 import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 import { TSignInUser } from "./auth.interface";
-import { createToken } from "./auth.utils";
+import { createToken, verifyToken } from "./auth.utils";
 import config from "../../config";
 import mongoose from "mongoose";
 import { User } from "../User/user.model";
@@ -44,6 +44,45 @@ const signIn = async (payload: TSignInUser) => {
     };
   };
 
+  const refreshToken = async (token: string) => {
+    console.log(token);
+    
+    // checking if the given token is valid
+    const decoded = verifyToken(token, config.jwt_refresh_key as string);
+  
+    const { email, role } = decoded;
+  
+    // checking if the user is exist
+    const user = await User.isUserExistsByEmail(email);
+  
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
+    }
+    // checking if the user is already deleted
+    const isDeleted = user?.isDeleted;
+  
+    if (isDeleted) {
+      throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
+    }
+  
+  
+    const jwtPayload = {
+      email: user.email,
+      role: user.role || 'customer',
+    };
+  
+    const accessToken = createToken(
+      jwtPayload,
+      config.jwt_access_key as string,
+      config.jwt_access_expires_in as string,
+    );
+  
+    return {
+      accessToken,
+    };
+  };
+
 export const authServices = {
     signIn,
+    refreshToken,
 } 

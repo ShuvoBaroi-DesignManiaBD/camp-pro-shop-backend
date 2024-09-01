@@ -29,11 +29,13 @@ const signIn = catchAsync(async (req, res) => {
   res.cookie('refreshToken', refreshToken, {
     secure: config.node_env === 'production',
     httpOnly: true,
+    sameSite: 'none'
   });
 
   res.cookie('accessToken', accessToken, {
     secure: config.node_env === 'production',
     httpOnly: true,
+    sameSite: 'none'
   });
 
   sendResponse(res, {
@@ -45,6 +47,19 @@ const signIn = catchAsync(async (req, res) => {
   });
 });
 
+const refreshToken = catchAsync(async (req, res) => {
+  const { refreshToken } = req.cookies;
+  const result = await authServices.refreshToken(refreshToken);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Access token is retrieved succesfully!',
+    data: result,
+  });
+});
+
 export const authControllers = {
-  signIn
+  signIn,
+  refreshToken
 };
