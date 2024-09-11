@@ -10,6 +10,7 @@ interface Address {
 }
 
 export type TUser = {
+  photo?:string;
   name: string;
   email: string;
   phone: string;
@@ -17,6 +18,16 @@ export type TUser = {
   address: Address;
   role?: "customer" | "admin";
   isDeleted: boolean;
+};
+
+export type TUpdateUser = {
+  photo?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: Address;
+  role?: "customer" | "admin";
+  isDeleted?: boolean;
 };
 
 export interface UserModel extends Model<TUser> {
@@ -33,5 +44,8 @@ export interface UserModel extends Model<TUser> {
     jwtIssuedTimestamp: number
   ): boolean;
 }
+
+// Create an array of TUser keys
+export const TUserKeys: string[] = ['name', 'email', 'phone', 'password', 'address', 'photo', 'phone'];
 
 export type TUserRole = keyof typeof USER_ROLE;

@@ -9,7 +9,36 @@ import config from "../../config";
 import Order from "./order.model";
 import { User } from "../User/user.model";
 import { ProductServices } from "../Product/product.service";
+import DataNotFoundError from "../../errors/DataNotFoundError";
+import QueryBuilder from "../../builder/QueryBuilder";
+import { OrderSearchableFields } from "./order.constant";
+import OrdersQueryBuilder from "../../builder/OrdersQueryBuilder";
 const SSLCommerzPayment = require("sslcommerz-lts");
+
+// =================================== Order CRUD ========================================
+const getMyOrders = async (userId: Record<string, unknown>) => {
+  console.log(userId);
+
+  // Create the query builder
+  const orderQuery = new OrdersQueryBuilder(Order.find({ userId }), userId)
+    .search(OrderSearchableFields)
+    .filter()
+    .sort()
+    .fields();
+
+  // Clone the query for counting documents
+  const countQuery = orderQuery.modelQuery.clone();
+  const totalMatchingDocuments = await countQuery.countDocuments().exec();
+  // Execute the query to get the actual results
+  orderQuery.paginate();
+  const orders = await orderQuery.modelQuery.exec();
+  // Handle case where no orders are found
+  if (!orders || orders.length < 1) {
+    throw new DataNotFoundError();
+  }
+
+  return { orders, totalOrders: totalMatchingDocuments };
+};
 
 // ======================== Paypal =================
 
@@ -55,7 +84,7 @@ const createOrderWithPaypal = async (order: IOrder) => {
 
 const captureOrderForPaypal = async (orderId: any) => {
   console.log(orderId);
-  
+
   const session = await mongoose.startSession();
 
   try {
@@ -73,18 +102,17 @@ const captureOrderForPaypal = async (orderId: any) => {
       }).session(session); // Use session
       console.log("Order found (line 74): ", order);
 
-      
       order && ProductServices.updateProductsStock(order.products);
-        // Update order status and add payer details using session
-        const updatedOrder = await Order.findOneAndUpdate(
-          { transactionId: `TXN-${orderId}` },
-          { status: "paid", payerDetails: capture?.result?.payer || {} },
-          { new: true, session } // Ensure session is used here
-        );
+      // Update order status and add payer details using session
+      const updatedOrder = await Order.findOneAndUpdate(
+        { transactionId: `TXN-${orderId}` },
+        { status: "paid", payerDetails: capture?.result?.payer || {} },
+        { new: true, session } // Ensure session is used here
+      );
 
-        await session.commitTransaction(); // Commit transaction after all operations
-        console.log("Transaction committed successfully.");
-        return updatedOrder;
+      await session.commitTransaction(); // Commit transaction after all operations
+      console.log("Transaction committed successfully.");
+      return updatedOrder;
     }
   } catch (err: any) {
     console.error("Error capturing order:", err);
@@ -111,13 +139,12 @@ const captureOrderForPaypal = async (orderId: any) => {
 
 // ===================== SSLCommerz ================
 
-
 const createOrderWithSSLCZ = async (order: IOrder) => {
   try {
     console.log(order);
     const id = new mongoose.Types.ObjectId().toString();
     const TXNId = `TXN-${id}`;
-    
+
     // Fetch user data
     const user = await User.findById(order?.userId);
     if (!user) {
@@ -131,7 +158,7 @@ const createOrderWithSSLCZ = async (order: IOrder) => {
       success_url: `${config.frontend_url}/order-success?gateway=sslcommerz&token=${id}`,
       fail_url: `${config.frontend_url}/order-fail`,
       cancel_url: `${config.frontend_url}/order-cancel`,
-      ipn_url: 'http://localhost:3030/ipn', // Make sure to use dynamic URLs
+      ipn_url: "http://localhost:3030/ipn", // Make sure to use dynamic URLs
       shipping_method: "Courier",
       product_name: "Computer.",
       product_category: "Electronic",
@@ -166,7 +193,10 @@ const createOrderWithSSLCZ = async (order: IOrder) => {
     const GatewayPageURL = apiResponse?.GatewayPageURL;
 
     if (!GatewayPageURL) {
-      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, "Payment gateway URL not received!");
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Payment gateway URL not received!"
+      );
     }
 
     // Update order with transaction details and status
@@ -180,7 +210,7 @@ const createOrderWithSSLCZ = async (order: IOrder) => {
     console.log("Order created and redirecting to: ", GatewayPageURL);
 
     return GatewayPageURL;
-  } catch (error:any) {
+  } catch (error: any) {
     console.error("Error creating order with SSLCZ:", error);
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -188,7 +218,6 @@ const createOrderWithSSLCZ = async (order: IOrder) => {
     );
   }
 };
-
 
 const captureOrderForSSLCZ = async (token: any) => {
   const session = await mongoose.startSession();
@@ -207,15 +236,18 @@ const captureOrderForSSLCZ = async (token: any) => {
     );
 
     // Await the transaction query
-    const isOrderCreatedInSSL = await sslcz.transactionQueryByTransactionId(data);
+    const isOrderCreatedInSSL =
+      await sslcz.transactionQueryByTransactionId(data);
     console.log(isOrderCreatedInSSL);
-    
+
     // Check for status codes 200 or 201
-    if (isOrderCreatedInSSL?.APIConnect === 'DONE') {
-      const order = await Order.findOne({ transactionId: `TXN-${token}` }).session(session); // Use session
+    if (isOrderCreatedInSSL?.APIConnect === "DONE") {
+      const order = await Order.findOne({
+        transactionId: `TXN-${token}`,
+      }).session(session); // Use session
       console.log("Order found (line 74): ", order, isOrderCreatedInSSL);
 
-      if (order && order.status !== 'paid') {
+      if (order && order.status !== "paid") {
         console.log(order?.products);
 
         // Await the product stock update
@@ -224,7 +256,13 @@ const captureOrderForSSLCZ = async (token: any) => {
         // Update order status and add payer details using session
         const updatedOrder = await Order.findOneAndUpdate(
           { transactionId: `TXN-${token}` },
-          { status: "paid", paidBy: orderDataFromSSL.card_issuer, bank_tran_id: orderDataFromSSL.bank_tran_id, currency_rate: orderDataFromSSL.currency_rate, tran_date: orderDataFromSSL.tran_date },
+          {
+            status: "paid",
+            paidBy: orderDataFromSSL.card_issuer,
+            bank_tran_id: orderDataFromSSL.bank_tran_id,
+            currency_rate: orderDataFromSSL.currency_rate,
+            tran_date: orderDataFromSSL.tran_date,
+          },
           { new: true, session } // Ensure session is used here
         );
 
@@ -232,13 +270,19 @@ const captureOrderForSSLCZ = async (token: any) => {
         console.log("Transaction committed successfully.");
         return updatedOrder;
       } else {
-        if (order && order?.status === 'paid') {
+        if (order && order?.status === "paid") {
           return order;
         }
-        throw new AppError(httpStatus.NOT_FOUND, "Order not found in the database!");
+        throw new AppError(
+          httpStatus.NOT_FOUND,
+          "Order not found in the database!"
+        );
       }
     } else {
-      throw new AppError(httpStatus.BAD_REQUEST, "Invalid SSLCommerz transaction response!");
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Invalid SSLCommerz transaction response!"
+      );
     }
   } catch (err: any) {
     console.error("Error capturing order:", err);
@@ -246,13 +290,19 @@ const captureOrderForSSLCZ = async (token: any) => {
 
     // Handle specific errors based on statusCode or error type
     if (err?.statusCode === 404) {
-      throw new AppError(httpStatus.NOT_FOUND, "Order not found in the database!");
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        "Order not found in the database!"
+      );
     } else if (err?.statusCode === 422) {
       const getOrder = await Order.findOne({ transactionId: `TXN-${token}` });
       console.log("Order already captured: ", getOrder);
       return getOrder;
     } else {
-      throw new AppError(httpStatus.BAD_REQUEST, `Something went wrong! ${err.message}`);
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Something went wrong! ${err.message}`
+      );
     }
   } finally {
     session.endSession(); // End session
@@ -265,5 +315,6 @@ export const orderServices = {
   createOrderWithPaypal,
   captureOrderForPaypal,
   createOrderWithSSLCZ,
-  captureOrderForSSLCZ
+  captureOrderForSSLCZ,
+  getMyOrders,
 };

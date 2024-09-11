@@ -22,6 +22,8 @@ app.use(cors(
 // application routes
 app.use("/api/v1", router); // /api/v1 will prefix all the route. This is the connection with the index.ts file inside the routes folder.
 
+app.use("/api/v1", router);
+
 app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to Camp Pro Shop!");
 });

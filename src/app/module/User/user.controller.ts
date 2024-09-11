@@ -18,7 +18,30 @@ const createCustomer = catchAsync(async (req:Request, res:Response) => {
   });
 })
 
+const updateAUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.updateAUser(req?.params?.id, req?.body);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Product updated successfully",
+    data: result,
+  });
+});
+
+const updateProfilePhoto = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.updateProfilePhoto(req?.body?.userId, req?.profileImage);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Profile photo updated successfully!",
+    data: result,
+  });
+});
 
 export const UserControllers = {
   createCustomer,
+  updateAUser,
+  updateProfilePhoto
  };

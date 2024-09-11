@@ -11,6 +11,10 @@ export const addressSchema = new Schema({
 }, { _id: false });
 
 export const userSchema = new Schema<TUser>({
+  photo: {
+    type: String,
+    trim: true,
+  },
   name: {
     type: String,
     required: true,

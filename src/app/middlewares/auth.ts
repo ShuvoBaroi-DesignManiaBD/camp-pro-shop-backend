@@ -23,9 +23,6 @@ const auth = (...requiredRoles: TUserRole[]) => {
     if (!accessToken && !refreshToken) {
       throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized!");
     } else if (!accessToken && refreshToken) {
-      // verify the refresh token
-      console.log('I am in refreshToken');
-      
       const decodedFromRefreshToken = verifyToken(
         refreshToken,
         config.jwt_refresh_key

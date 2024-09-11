@@ -23,6 +23,13 @@ router.post(
   OrderControllers.captureOrder
 );
 
+router.get(
+  '/my-orders',
+  auth(USER_ROLE?.admin, USER_ROLE?.customer
+  ), 
+  OrderControllers.getMyOrders, 
+);
+
 // router.get("", orderControllers.getAllProducts);
 
 // router.get("/:id", orderControllers.getAProduct);

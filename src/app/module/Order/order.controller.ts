@@ -31,6 +31,17 @@ const createOrder = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyOrders = catchAsync(async (req: Request, res: Response) => {
+  const result = await orderServices.getMyOrders(req?.query);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "A product retrieved successfully",
+    data: result,
+  });
+});
+
 const captureOrder = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   console.log(req.body);
@@ -57,4 +68,5 @@ const captureOrder = catchAsync(async (req: Request, res: Response) => {
 export const OrderControllers = {
   createOrder,
   captureOrder,
+  getMyOrders
 };
