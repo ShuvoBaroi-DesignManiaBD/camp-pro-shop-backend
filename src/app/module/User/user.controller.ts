@@ -30,7 +30,7 @@ const updateAUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateProfilePhoto = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserServices.updateProfilePhoto(req?.body?.userId, req?.profileImage);
+  const result = await UserServices.updateProfilePhoto(req?.body?.userId, req?.body?.profileImage);
 
   sendResponse(res, {
     success: true,

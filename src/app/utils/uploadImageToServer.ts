@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
     const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const imageName = uniquePrefix + '-' + file.originalname;
     cb(null, imageName);
-    req.profileImage = path.join(process.cwd(), 'uploads', imageName);
+    req.body.profileImage = path.join(process.cwd(), 'uploads', imageName);
   },
 });
 
