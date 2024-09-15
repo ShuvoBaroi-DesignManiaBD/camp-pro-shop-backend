@@ -1,24 +1,77 @@
 import fs from 'fs';
 import path from 'path';
-import multer from 'multer';
+import multer, { StorageEngine, FileFilterCallback } from 'multer';
+import { Request, Response, NextFunction } from 'express';
+import config from '../config';
+import { User } from '../module/User/user.model';
+import { Error } from 'mongoose';
 
-// Ensure the uploads directory exists
-const uploadDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Base upload directories
+const usersUploadDir: string = path.join(process.cwd(), '../uploads/users/');
+const publicUploadDir: string = path.join(process.cwd(), '../uploads/public/');
+
+// Ensure the directories exist
+if (!fs.existsSync(usersUploadDir)) {
+  fs.mkdirSync(usersUploadDir, { recursive: true });
+}
+if (!fs.existsSync(publicUploadDir)) {
+  fs.mkdirSync(publicUploadDir, { recursive: true });
 }
 
-// Multer storage configuration
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir); // Use the created directory
+// File filter function for image files
+const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+  const allowedTypes = /jpeg|jpg|png|gif/;
+  const mimeType = allowedTypes.test(file.mimetype);
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+
+  if (mimeType && extname) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'));
+  }
+};
+
+// Custom storage engine for multer
+const storage: StorageEngine = multer.diskStorage({
+  destination: async (req: Request, file: Express.Multer.File, cb) => {
+    try {
+      const { userId, type } = req.query;
+      const isProfileUpload = type === 'profile';
+      const baseDirectory = isProfileUpload ? usersUploadDir : publicUploadDir;
+
+      const user = userId ? await User.findById(userId) : null;
+      const directory = isProfileUpload && user ? path.join(baseDirectory, user?.name.replace(/ /g, "_")) : baseDirectory;
+
+      // Ensure the directory exists
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+      }
+
+      cb(null, directory); // Use the determined directory
+    } catch (error:any) {
+      cb(error, '');
+    }
   },
-  filename: function (req, file, cb) {
+  filename: (req: Request, file: Express.Multer.File, cb) => {
     const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const imageName = uniquePrefix + '-' + file.originalname;
-    cb(null, imageName);
-    req.body.profileImage = path.join(process.cwd(), 'uploads', imageName);
-  },
+
+    const { userId, type } = req.query;
+    User.findById(userId).then(user => {
+      const subDirectory = type === 'profile' ? `users/${user?.name.replace(/ /g, "_")}` : 'public';
+
+      // Store the path to the uploaded image in req.body.profileImage for later use
+      req.body.profileImage = path.join(config.backend_url as string, 'uploads', subDirectory, imageName);
+      cb(null, imageName);
+    }).catch(err => cb(err, ''));
+  }
 });
 
-export const upload = multer({ storage: storage });
+// Multer middleware
+export const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 2 * 1024 * 1024 }, // Limit file size to 2MB
+})
+
+

@@ -16,4 +16,5 @@ export default {
   STORE_ID: process.env.STORE_ID,
   STORE_PASSWD: process.env.STORE_PASSWD,
   IS_LIVE: false,
+  backend_url: process.env.BACKEND_URL,
 };

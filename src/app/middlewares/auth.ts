@@ -18,7 +18,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
     let JwtPayload;
     let accessToken = req.headers?.accesstoken;
     const refreshToken = req.cookies?.refreshToken || req.headers?.refreshToken;
-    console.log(accessToken, '/----/', refreshToken);
+    // console.log(accessToken, '/----/', refreshToken);
     // checking if the token is missing
     if (!accessToken && !refreshToken) {
       throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized!");
@@ -27,7 +27,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
         refreshToken,
         config.jwt_refresh_key
       );
-      console.log('refreshToken =>', decodedFromRefreshToken );
+      // console.log('refreshToken =>', decodedFromRefreshToken );
       const { role, email } = decodedFromRefreshToken;
       userRole = role;
       // checking if the user is exist
@@ -41,7 +41,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
         email: email,
       };
     } else if (accessToken) {
-      console.log('line 47',refreshToken);
+      // console.log('line 47',refreshToken);
       let decoded;
       // checking if the given token is valid
       try {
@@ -49,7 +49,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
           accessToken as string,
           config.jwt_access_key as string
         ) as JwtPayload;
-        console.log('line 55',accessToken);
+        // console.log('line 55',accessToken);
       } catch (error) {
         console.log(error);
         
@@ -89,6 +89,8 @@ const auth = (...requiredRoles: TUserRole[]) => {
     }
 
     req.user = JwtPayload as JwtPayload;
+    console.log(req.user);
+    
     next();
   });
 };

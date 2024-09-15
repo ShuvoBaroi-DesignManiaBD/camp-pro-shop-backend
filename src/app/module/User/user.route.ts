@@ -6,6 +6,7 @@ import { UserValidation } from "./user.validation";
 import auth from "../../middlewares/auth";
 import { USER_ROLE } from "./user.constant";
 import { upload } from "../../utils/uploadImageToServer";
+import { convertToWebP } from "../../middlewares/convertToWebP";
 
 const router = express.Router();
 
@@ -18,14 +19,17 @@ router.post(
 router.patch(
   "/update-profile-photo",
   auth(USER_ROLE?.customer, USER_ROLE?.admin),
+  // parseFormDataFields,
+  // uploadImageToServer,
   upload.single('file'),
+  convertToWebP,
   UserControllers.updateProfilePhoto
 );
 
 router.patch(
   "/update-user/:id",
   auth(USER_ROLE?.customer, USER_ROLE?.admin),
-  upload.single('file'),
+  // upload.single('file'),
   validateRequest(UserValidation.updateUserValidation),
   UserControllers.updateAUser
 );

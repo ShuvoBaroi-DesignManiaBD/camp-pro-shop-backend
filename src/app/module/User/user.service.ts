@@ -86,9 +86,11 @@ const updateAUser = async (id: string, payload: Partial<TUpdateUser>) => {
 
 
 // ======================= Update Profile Photo =======================
-const updateProfilePhoto = async (userId:string, file:File) => {
+const updateProfilePhoto = async (userId:string, file:string) => {
   // Finding the user by ID
   const user = await User.findById(userId);
+  console.log(userId, file);
+  
 
   if (!user) {
     throw new DataNotFoundError();
