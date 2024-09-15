@@ -19,8 +19,6 @@ router.post(
 router.patch(
   "/update-profile-photo",
   auth(USER_ROLE?.customer, USER_ROLE?.admin),
-  // parseFormDataFields,
-  // uploadImageToServer,
   upload.single('file'),
   convertToWebP,
   UserControllers.updateProfilePhoto

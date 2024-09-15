@@ -1,47 +1,52 @@
-import sharp from 'sharp';
-import fs from 'fs';
-import { NextFunction, Request, Response } from 'express';
-import path from 'path';
+import sharp from "sharp";
+import fs from "fs/promises"; // Use fs.promises for async operations
+import { NextFunction, Request, Response } from "express";
+import path from "path";
 
 // Middleware for image conversion to WebP
-export const convertToWebP = async (req: Request, res: Response, next: NextFunction) => {
-  console.log('file=>', req?.file);
+export const convertToWebP = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  console.log("file=>", req?.file);
 
-  if (!req.file) {
-    return next(new Error('No file uploaded.'));
+  if (!req?.file) {
+    return next(new Error("No file uploaded."));
   }
 
   const filePath = req.file.path;
-  console.log('filepath=>', filePath);
-
-  const newFilePath = filePath.replace(/\.[^/.]+$/, '.webp');
+  const newFilePath = filePath.replace(/\.[^/.]+$/, ".webp");
 
   try {
     // Convert the uploaded image to WebP
     await sharp(filePath)
       .webp({ quality: 80 }) // Convert to WebP with 80% quality
-      .toFile(newFilePath);
+      .toFile(newFilePath);  // Save the converted file to the new path
 
-    // Replace original file with the WebP file in req.file
+    console.log("WebP image saved at:", newFilePath);
+
+    // Update req.file to reference the new WebP file
     req.file.path = newFilePath;
     req.file.filename = path.basename(newFilePath);
-    req.file.mimetype = 'image/webp';
+    req.file.mimetype = "image/webp";
 
-    // Optionally delete the original image file after conversion
-    const normalizedFilePath = path.normalize(filePath); // Normalize the path
-    fs.unlink(normalizedFilePath, (err) => {
-      if (err) {
-        console.error(`Failed to delete original file: ${err}`);
-      } else {
-        console.log(`Original file ${normalizedFilePath} deleted successfully.`);
-      }
-    });
+    // Optional: Check if the WebP file exists after conversion
+    try {
+      await fs.access(newFilePath);
+      console.log("WebP file exists:", newFilePath);
+    } catch (err) {
+      console.error("Error: WebP file not found:", newFilePath);
+      return next(new Error("Failed to create WebP file."));
+    }
 
-    next();
+    // Delete the original file (JPEG/PNG)
+    await fs.unlink(filePath);
+    console.log(`Original file ${filePath} deleted successfully.`);
+
+    next(); // Proceed to the next middleware
   } catch (error) {
-    console.error('Error converting image to WebP:', error);
+    console.error("Error converting image to WebP:", error);
     next(error);
   }
 };
-
-

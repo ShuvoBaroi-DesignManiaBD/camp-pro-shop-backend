@@ -5,10 +5,12 @@ import { Request, Response, NextFunction } from 'express';
 import config from '../config';
 import { User } from '../module/User/user.model';
 import { Error } from 'mongoose';
+import { convertToWebP } from '../middlewares/convertToWebP';
 
 // Base upload directories
 const usersUploadDir: string = path.join(process.cwd(), '../uploads/users/');
 const publicUploadDir: string = path.join(process.cwd(), '../uploads/public/');
+const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
 
 // Ensure the directories exist
 if (!fs.existsSync(usersUploadDir)) {
@@ -34,31 +36,39 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallb
 // Custom storage engine for multer
 const storage: StorageEngine = multer.diskStorage({
   destination: async (req: Request, file: Express.Multer.File, cb) => {
+    console.log(usersUploadDir);
     try {
       const { userId, type } = req.query;
       const isProfileUpload = type === 'profile';
       const baseDirectory = isProfileUpload ? usersUploadDir : publicUploadDir;
-
+      // const convertToWebp = await convertToWebP(req?.file);
+      const imageName = uniquePrefix + '-' + file.originalname;
+      // console.log('webP=>',convertToWebp);
+      console.log('type=>', type);
+      
       const user = userId ? await User.findById(userId) : null;
-      const directory = isProfileUpload && user ? path.join(baseDirectory, user?.name.replace(/ /g, "_")) : baseDirectory;
+      const directory = (isProfileUpload && user) ? path.join(baseDirectory, user?.name?.toLowerCase().replace(/ /g, "_")) : baseDirectory;
 
       // Ensure the directory exists
       if (!fs.existsSync(directory)) {
         fs.mkdirSync(directory, { recursive: true });
       }
 
+      console.log(directory);
+
       cb(null, directory); // Use the determined directory
     } catch (error:any) {
       cb(error, '');
     }
   },
-  filename: (req: Request, file: Express.Multer.File, cb) => {
-    const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+  filename: async (req: Request, file: Express.Multer.File, cb) => {
+    console.log('fileName', req?.file);
+    
     const imageName = uniquePrefix + '-' + file.originalname;
 
     const { userId, type } = req.query;
     User.findById(userId).then(user => {
-      const subDirectory = type === 'profile' ? `users/${user?.name.replace(/ /g, "_")}` : 'public';
+      const subDirectory = type === 'profile' ? `users/${user?.name?.toLowerCase().replace(/ /g, "_")}` : 'public';
 
       // Store the path to the uploaded image in req.body.profileImage for later use
       req.body.profileImage = path.join(config.backend_url as string, 'uploads', subDirectory, imageName);
@@ -73,5 +83,4 @@ export const upload = multer({
   fileFilter: fileFilter,
   limits: { fileSize: 2 * 1024 * 1024 }, // Limit file size to 2MB
 })
-
 
