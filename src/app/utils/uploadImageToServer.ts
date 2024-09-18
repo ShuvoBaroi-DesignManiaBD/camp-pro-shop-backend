@@ -6,6 +6,8 @@ import config from '../config';
 import { User } from '../module/User/user.model';
 import { Error } from 'mongoose';
 import { convertToWebP } from '../middlewares/convertToWebP';
+import AppError from '../errors/AppError';
+import httpStatus from 'http-status';
 
 // Base upload directories
 const usersUploadDir: string = path.join(process.cwd(), '../uploads/users/');
@@ -47,6 +49,7 @@ const storage: StorageEngine = multer.diskStorage({
       console.log('type=>', type);
       
       const user = userId ? await User.findById(userId) : null;
+      if(!user) new AppError(httpStatus.FORBIDDEN, "Unauthorized access!");
       const directory = (isProfileUpload && user) ? path.join(baseDirectory, user?.name?.toLowerCase().replace(/ /g, "_")) : baseDirectory;
 
       // Ensure the directory exists
@@ -65,13 +68,14 @@ const storage: StorageEngine = multer.diskStorage({
     console.log('fileName', req?.file);
     
     const imageName = uniquePrefix + '-' + file.originalname;
-
+    const webp = imageName.replace(/\.[^/.]+$/, ".webp");
+                
     const { userId, type } = req.query;
     User.findById(userId).then(user => {
       const subDirectory = type === 'profile' ? `users/${user?.name?.toLowerCase().replace(/ /g, "_")}` : 'public';
 
       // Store the path to the uploaded image in req.body.profileImage for later use
-      req.body.profileImage = path.join(config.backend_url as string, 'uploads', subDirectory, imageName);
+      req.body.profileImage = path.join(config.backend_url as string, 'uploads', subDirectory, webp);
       cb(null, imageName);
     }).catch(err => cb(err, ''));
   }

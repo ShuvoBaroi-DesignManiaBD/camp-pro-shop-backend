@@ -13,6 +13,7 @@ type TResponse<T> = {
   message?: string;
   meta?: TMeta;
   totalProducts?: number;
+  totalOrders?: number;
   data: T;
   token?: string;
 };
@@ -23,6 +24,7 @@ const sendResponse = <T>(res: Response, data: TResponse<T>) => {
     message: data.message,
     meta: data.meta,
     totalProducts: data.totalProducts,
+    totalOrders: data.totalOrders,
     data: data.data,
     token: data.token
   });

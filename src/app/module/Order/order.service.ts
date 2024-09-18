@@ -16,6 +16,54 @@ import OrdersQueryBuilder from "../../builder/OrdersQueryBuilder";
 const SSLCommerzPayment = require("sslcommerz-lts");
 
 // =================================== Order CRUD ========================================
+// const getAllOrders = async (query: Record<string, unknown>) => {
+//   const baseQuery = new QueryBuilder(Order.find({ isDeleted: false }), query)
+//     .search(OrderSearchableFields)
+//     .filter()
+//     .sort()
+//     .fields();
+
+//   // Clone the query for counting documents
+//   const countQuery = baseQuery.modelQuery.clone();
+
+//   // Count the total number of documents matching the criteria
+//   const totalMatchingDocuments = await countQuery.countDocuments().exec();
+
+//   // Apply pagination to the original query
+//   baseQuery.paginate();
+
+//   // Get the final result with pagination
+//   const result = await baseQuery.modelQuery.exec();
+
+//   return { orders, totalOrders: totalMatchingDocuments };
+// };
+
+
+const getAllOrders = async (query: Record<string, unknown>) => {
+  console.log(query);
+
+  // Create the query builder
+  const orderQuery = new OrdersQueryBuilder(Order.find(), query)
+    .search(OrderSearchableFields)
+    .filter()
+    .sort()
+    .fields();
+
+  // Clone the query for counting documents
+  const countQuery = orderQuery.modelQuery.clone();
+  const totalMatchingDocuments = await countQuery.countDocuments().exec();
+  // Execute the query to get the actual results
+  orderQuery.paginate();
+  const orders = await orderQuery.modelQuery.exec();
+  // Handle case where no orders are found
+  if (!orders || orders.length < 1) {
+    throw new DataNotFoundError();
+  }
+
+  return { orders, totalOrders: totalMatchingDocuments };
+};
+
+
 const getMyOrders = async (userId: Record<string, unknown>) => {
   console.log(userId);
 
@@ -316,5 +364,6 @@ export const orderServices = {
   captureOrderForPaypal,
   createOrderWithSSLCZ,
   captureOrderForSSLCZ,
+  getAllOrders,
   getMyOrders,
 };

@@ -24,11 +24,18 @@ router.post(
 );
 
 router.get(
+  '/all-orders',
+  auth(USER_ROLE?.admin), 
+  OrderControllers.getAllOrders, 
+);
+
+router.get(
   '/my-orders',
   auth(USER_ROLE?.admin, USER_ROLE?.customer
   ), 
   OrderControllers.getMyOrders, 
 );
+
 
 // router.get("", orderControllers.getAllProducts);
 
