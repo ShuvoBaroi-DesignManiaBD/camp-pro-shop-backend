@@ -7,7 +7,33 @@ import { Customer } from "../Customer/customer.model";
 import DataNotFoundError from "../../errors/DataNotFoundError";
 import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
+import { UserSearchableFields } from "./user.constant";
+import UsersQueryBuilder from "../../builder/UsersQueryBuilder";
 
+
+const getAllUsers = async (query: Record<string, unknown>) => {
+  console.log(query);
+
+  // Create the query builder
+  const userQuery = new UsersQueryBuilder(User.find(), query)
+    .search()
+    .filter()
+    .sort()
+    .fields();
+
+  // Clone the query for counting documents
+  const countQuery = userQuery.modelQuery.clone();
+  const totalMatchingDocuments = await countQuery.countDocuments().exec();
+  // Execute the query to get the actual results
+  userQuery.paginate();
+  const users = await userQuery.modelQuery.exec();
+  // Handle case where no orders are found
+  if (!users || users.length < 1) {
+    throw new DataNotFoundError();
+  }
+
+  return { users: users, totalUsers: totalMatchingDocuments };
+};
 
 const createCustomer = async (payload: TUser) => {
   const session = await mongoose.startSession();
@@ -113,6 +139,7 @@ const updateProfilePhoto = async (userId:string, file:string) => {
 };
 
 export const UserServices = {
+  getAllUsers,
   createCustomer,
   updateAUser,
   updateProfilePhoto

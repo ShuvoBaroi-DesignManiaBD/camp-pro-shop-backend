@@ -42,7 +42,11 @@ const getAProduct = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateAProduct = catchAsync(async (req: Request, res: Response) => {
-  const result = await ProductServices.updateAProduct(req?.params?.id, req?.body);
+  console.log(req?.body, req?.query, req?.files, );
+  // const data = JSON.parse(req.body.updatedValues)
+
+  // Pass the productId from query and req.body and also pass the req object (or req.files) for file handling
+  const result = await ProductServices.updateAProduct(req?.query?.productId as string, req?.body?.updatedValues, req?.files);
 
   sendResponse(res, {
     success: true,

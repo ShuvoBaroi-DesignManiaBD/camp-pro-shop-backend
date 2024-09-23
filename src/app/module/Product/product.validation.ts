@@ -2,7 +2,8 @@ import { z } from "zod";
 
 // Define the ProductImage schema
 const productImageSchema = z.object({
-  url: z.string().min(1, "URL is required"),
+  // url: z.string().min(1, "URL is required"),
+  url: z.string().optional(),
   alt: z.string().optional(),
 });
 
@@ -41,16 +42,18 @@ const productValidationSchema = z.object({
 // Define Zod schema for IProduct
 const productUpdateSchema = z.object({
   body: z.object({
-    name: z.string().optional(), // All fields are optional for update
-    price: z.number().positive().optional(),
-    stockQuantity: z.number().min(0).optional(),
-    description: z.string().optional(),
-    category: z.string().optional(),
-    ratings: z.number().min(0).optional(),
-    images: z.array(productImageSchema).optional(), // Assuming images can be updated as an array
-    isStock: z.boolean().optional(),
-    isDeleted: z.boolean().optional(),
-  }),
+    updatedValues: z.object({
+      name: z.string().optional(), // All fields are optional for update
+      price: z.number().positive().optional(),
+      stockQuantity: z.number().min(0).optional(),
+      description: z.string().optional(),
+      category: z.string().optional(),
+      ratings: z.number().min(0).optional(),
+      images: z.array(productImageSchema).optional(), // Assuming images can be updated as an array
+      isStock: z.boolean().optional(),
+      isDeleted: z.boolean().optional(),
+    }),
+  })
 });
 
 

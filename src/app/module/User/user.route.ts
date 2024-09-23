@@ -10,6 +10,13 @@ import { convertToWebP } from "../../middlewares/convertToWebP";
 
 const router = express.Router();
 
+
+router.get(
+  '/all-users',
+  auth(USER_ROLE?.admin), 
+  UserControllers.getAllUsers, 
+);
+
 router.post(
   "/create-customer",
   validateRequest(UserValidation.newUserValidation),

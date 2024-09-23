@@ -1,7 +1,7 @@
-import { Document } from 'mongoose';
+import { Document } from "mongoose";
 
-export interface ProductImage {
-  url: string;
+export interface IProductImage {
+  url?: string;
   alt?: string;
 }
 
@@ -12,11 +12,20 @@ export interface IProduct extends Document {
   description: string;
   category: string;
   ratings: number;
-  images: ProductImage[];
+  images: IProductImage[] | undefined;
   isStock: boolean;
   isDeleted: boolean;
 }
 
-
 // Create an array of IProduct keys
-export const IProductKeys: string[] = ['name', 'price', 'stockQuantity', 'description', 'category', 'ratings', 'images', 'isStock', 'isDeleted'];
+export const IProductKeys: string[] = [
+  "name",
+  "price",
+  "stockQuantity",
+  "description",
+  "category",
+  "ratings",
+  "images",
+  "isStock",
+  "isDeleted",
+];

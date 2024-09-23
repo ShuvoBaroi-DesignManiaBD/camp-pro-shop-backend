@@ -9,6 +9,9 @@ import QueryBuilder from "../../builder/QueryBuilder";
 import DataNotFoundError from "../../errors/DataNotFoundError";
 import { ProductSearchableFields } from "./product.constant";
 import { cartItem } from "../Order/order.interface";
+import { upload } from "../../utils/uploadImageToServer";
+import { IProductImage } from "./product.interface";
+import config from "../../config";
 
 const createProduct = async (payload: IProduct) => {
   const session = await mongoose.startSession();
@@ -67,36 +70,152 @@ const getAllProducts = async (query: Record<string, unknown>) => {
 };
 
 // ======================= Update operations =======================
-const updateAProduct = async (id: string, payload: Partial<IProduct>) => {
-  // Finding the product by ID
-  const product = await Product.findById(id);
+// const updateAProduct = async (
+//   id: string,
+//   payload: {updatedValues: Partial<IProduct>, removedImages: string[]},
+//   images: File[] & any
+// ) => {
+//   console.log(images, payload);
+//   const updatedValues = payload?.updatedValues;
+//   const removedImages = payload?.removedImages;
+//   // Find the product by ID
+//   const product = await Product.findById(id);
 
+//   if (!product) {
+//     throw new DataNotFoundError();
+//   }
+
+//   // Check for invalid fields in the payload
+//   for (const key of Object.keys(updatedValues)) {
+//     if (!IProductKeys.includes(key)) {
+//       throw new AppError(httpStatus.BAD_REQUEST, `Invalid field: ${key}`);
+//     }
+//   }
+
+// let uploadedImages = [];
+
+// // Append uploaded images to the payload
+// let oldImages = (product.images &&  product.images.length > 0) ? [...product.images] : [];
+// console.log("old_images=>", oldImages);
+//   // Handle file upload using req.files (assuming multer middleware is used)
+//   if (images && images.length > 0) {
+//     uploadedImages = images.map((file: File & any) => ({
+//       url: `${config.backend_url}uploads/public/products/${product?.name.toLowerCase().replace(/ /g, "_")}/${file?.filename}`, // Assuming you're saving images in an 'uploads' directory
+//       alt: file.originalname, // Optionally save the original name
+//     }));
+
+
+//     if(uploadedImages.length > 0) {
+//       for (const item of uploadedImages) {
+//         if (!oldImages.some((img) => img.alt === item.alt)) {
+//           if (oldImages.length < 5) {
+//             oldImages.push(item);
+//           }
+//         }
+//       }
+
+//     }
+
+//   }
+
+//   if (oldImages.length > 0) {
+//     let imagesAfterDelete;
+//     if(removedImages !== undefined){
+//       for (const item of oldImages) {
+//         if (removedImages.some((img) => img === item.url)) {
+//           imagesAfterDelete = oldImages.filter(i=>i!== item);
+//         }
+//       }
+//       oldImages = imagesAfterDelete
+//     }
+//     updatedValues.images = oldImages;
+//     console.log('images have added in PAYLOAD=>',updatedValues.images, oldImages, uploadedImages);
+//   }
+//   // Perform the update
+//   const result = await Product.findByIdAndUpdate(id, payload, {
+//     new: true,
+//     runValidators: true,
+//   });
+
+//   if (!result) {
+//     throw new AppError(
+//       httpStatus.INTERNAL_SERVER_ERROR,
+//       "Failed to update the product!"
+//     );
+//   }
+
+//   return result;
+// };
+
+const updateAProduct = async (
+  id: string,
+  payload: { updatedValues: Partial<IProduct>; removedImages?: string[] },
+  images: File[] & any
+) => {
+  console.log(images, payload);
+  
+  const updatedValues = payload?.updatedValues || {};
+  const removedImages = payload?.removedImages || [];
+  
+  // Find the product by ID
+  const product = await Product.findById(id);
+  
   if (!product) {
     throw new DataNotFoundError();
   }
 
   // Check for invalid fields in the payload
-  for (const key of Object.keys(payload)) {
+  for (const key of Object.keys(updatedValues)) {
     if (!IProductKeys.includes(key)) {
       throw new AppError(httpStatus.BAD_REQUEST, `Invalid field: ${key}`);
     }
   }
 
+  let uploadedImages = [];
+  
+  // Copy old images from the product (if any)
+  let oldImages = (product.images && product.images.length > 0) ? [...product.images] : [];
+  console.log("old_images =>", oldImages);
+
+  // Handle new image uploads
+  if (images && images.length > 0) {
+    uploadedImages = images.map((file: File & any) => ({
+      url: `${config.backend_url}uploads/public/products/${product?.name.toLowerCase().replace(/ /g, "_")}/${file?.filename}`,
+      alt: file.originalname, // Optionally save the original name
+    }));
+
+    // Append unique uploaded images to the oldImages array
+    uploadedImages.forEach((item:any) => {
+      if (!oldImages.some((img) => img.alt === item.alt) && oldImages.length < 5) {
+        oldImages.push(item); // Ensure only up to 5 images are kept
+      }
+    });
+  }
+
+  // Handle image removal based on removedImages array
+  if (removedImages !== undefined && removedImages.length > 0) {
+    oldImages = oldImages.filter((img) => !removedImages.includes(img.url as string));
+    console.log(oldImages);
+    
+  }
+
+  // Update the images in the updatedValues payload
+  updatedValues.images = oldImages;
+  console.log('Images added to PAYLOAD =>', updatedValues.images);
+
   // Perform the update
-  const result = await Product.findByIdAndUpdate(id, payload, {
+  const result = await Product.findByIdAndUpdate(id, updatedValues, {
     new: true,
     runValidators: true,
   });
 
   if (!result) {
-    throw new AppError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      "Failed to update the product!"
-    );
+    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to update the product!");
   }
 
   return result;
 };
+
 
 const updateProductsStock = async (products: cartItem[]) => {
   // Start a session and transaction
@@ -174,5 +293,5 @@ export const ProductServices = {
   getAProduct,
   updateAProduct,
   deleteAProduct,
-  updateProductsStock
+  updateProductsStock,
 };

@@ -4,6 +4,19 @@ import { UserServices } from './user.service';
 import { Request, Response } from 'express';
 import sendResponse from '../../utils/sendResponse';
 
+
+const getAllUsers = catchAsync(async (req: Request, res: Response) => {
+  const {users, totalUsers} = await UserServices.getAllUsers(req?.query);
+  
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "All orders retrieved successfully",
+    totalOrders: totalUsers,
+    data: users,
+  });
+});
+
 // Below you can see the application of catchAsync function. 
 const createCustomer = catchAsync(async (req:Request, res:Response) => {
   // Below is the sample code to show you how to call the service function and pass parameter to it. 
@@ -44,6 +57,7 @@ const updateProfilePhoto = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const UserControllers = {
+  getAllUsers,
   createCustomer,
   updateAUser,
   updateProfilePhoto
