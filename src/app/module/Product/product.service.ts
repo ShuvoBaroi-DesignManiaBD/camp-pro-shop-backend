@@ -13,18 +13,33 @@ import { upload } from "../../utils/uploadImageToServer";
 import { IProductImage } from "./product.interface";
 import config from "../../config";
 
-const createProduct = async (payload: IProduct) => {
+const createProduct = async (payload: IProduct, images:any) => {
+  console.log('Product data =>',payload,images);
+  
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    const isProductExist = await Product.find({ name: payload?.name });
+    const isProductExist = await Product.findOne({ name: payload?.name });
 
-    if (isProductExist.length !== 0) {
+    if (isProductExist && !isProductExist?.isDeleted) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
         "A product with this name already exist!"
       );
     }
+
+    let uploadedImages:IProductImage[]|[] = [];
+    // Handle new image uploads
+  if (images && images.length > 0) {
+    uploadedImages = images.map((file: File & any) => ({
+      url: `${config.backend_url}uploads/public/products/${payload?.name.toLowerCase().replace(/ /g, "_")}/${file?.filename}`,
+      alt: file.originalname, // Optionally save the original name
+    }));
+  }
+    if(uploadedImages.length > 0){
+      payload.images = uploadedImages
+    }
+
     const result = await Product.create(payload);
     await session.commitTransaction();
     await session.endSession();
@@ -35,7 +50,7 @@ const createProduct = async (payload: IProduct) => {
     await session.endSession();
     throw new Error(error);
   }
-};
+}
 
 const getAProduct = async (id: string) => {
   const product = await Product.findById(id);

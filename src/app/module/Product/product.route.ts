@@ -14,7 +14,10 @@ const router = express.Router();
 router.post(
   '/create-product',
   auth(USER_ROLE.admin),
+  upload.array('images', 5),
+  parseJson,
   validateRequest(ProductValidation.productValidationSchema), 
+  convertToWebP,
   ProductControllers.createProduct, 
 );
 

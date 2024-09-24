@@ -26,7 +26,7 @@ ensureDirectoryExists(publicUploadDir);
 
 // File filter function for image files
 const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-  console.log(file);
+  console.log('file=>',file, 'body=>',req.body);
   
   const allowedTypes = /jpeg|jpg|png|gif/;
   const mimeType = allowedTypes.test(file.mimetype);
@@ -42,6 +42,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallb
 // Custom storage engine for multer
 const storage: StorageEngine = multer.diskStorage({
   destination: async (req: Request, file: Express.Multer.File, cb) => {
+    console.log('file=>',file, 'body=>',req.body);
     try {
       const { userId, type, productId } = req.query;
       const isProfileUpload = type === 'profile';
@@ -72,9 +73,12 @@ const storage: StorageEngine = multer.diskStorage({
     }
   },
   filename: async (req: Request, file: Express.Multer.File, cb) => {
+    console.log('file=>',file);
+    
     try {
       const { userId, type } = req.query;
-
+      console.log(type);
+      
       // Generate unique filename
       const imageName = uniquePrefix + '-' + file.originalname;
       const webpName = imageName.replace(/\.[^/.]+$/, '.webp'); // Convert filename to .webp

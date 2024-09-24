@@ -7,7 +7,9 @@ import { ProductServices } from './product.service';
 // Below you can see the application of catchAsync function. 
 const createProduct = catchAsync(async (req:Request, res:Response) => {
   // Below is the sample code to show you how to call the service function and pass parameter to it. 
-  const result = await ProductServices.createProduct(req.body);
+  console.log('files=>',req?.files);
+  
+  const result = await ProductServices.createProduct(req.body?.productValues, req?.files);
 
   // Below you can see the use of custom sendResponse function to make the code base clean. 
   sendResponse(res, {

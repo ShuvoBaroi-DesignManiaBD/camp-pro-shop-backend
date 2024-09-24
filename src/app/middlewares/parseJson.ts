@@ -8,11 +8,14 @@ export const parseJson = async (
   res: Response,
   next: NextFunction
 ) => {
-  console.log(req?.body);
+  console.log(req?.body, req?.query);
 
   try {
     // Only parse if updatedValues is a string, otherwise it's already an object
     console.log(typeof req.body.updatedValues);
+    const productValues = typeof req.body.productValues === 'string'
+      ? JSON.parse(req.body.productValues)
+      : req.body.productValues;
     const updatedData = typeof req.body.updatedValues === 'string'
       ? JSON.parse(req.body.updatedValues)
       : req.body.updatedValues;
@@ -20,9 +23,10 @@ export const parseJson = async (
     ? JSON.parse(req.body.removedImages)
     : req.body.removedImages;
     // updatedData.images = req.files; // Attach uploaded files
-    console.log('Updated Values =>', req?.body.updatedValues, updatedData, 'removed Images=>', removedImages);
+    console.log('Updated Values =>', req?.body.updatedValues, updatedData, 'removed Images=>', removedImages, 'productValues=>', productValues);
     req.body.updatedValues = updatedData;
     req.body.removedImages = removedImages;
+    req.body.productValues = productValues;
 
     next(); // Proceed to the next middleware
   } catch (error) {
