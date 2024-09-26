@@ -45,6 +45,7 @@ const storage: StorageEngine = multer.diskStorage({
     console.log('file=>',file, 'body=>',req.body);
     try {
       const { userId, type, productId } = req.query;
+      // const {productValues} = req?.body;
       const isProfileUpload = type === 'profile';
       const isProductUpload = type === 'product';
 
@@ -58,13 +59,19 @@ const storage: StorageEngine = multer.diskStorage({
         return cb(new AppError(httpStatus.FORBIDDEN, 'Unauthorized access!'), '');
       }
 
+      console.log('beforeDirectory', isProductUpload, product);
+      
       // Construct directory path
       let directory = '';
       if (isProfileUpload) {
         directory = path.join(baseDirectory, user?.name?.toLowerCase().replace(/ /g, '_') || '');
-      } else if (isProductUpload){
+      } else if (isProductUpload && product && !product.isDeleted){
         directory = path.join(baseDirectory, 'products', product?.name?.toLowerCase().replace(/ /g, '_') || '');
-      }
+      } else if (isProductUpload && product && product.isDeleted){
+        directory = path.join(baseDirectory, 'products');
+      } else if (isProductUpload && !product){
+        directory = path.join(baseDirectory, 'products');
+      } 
       
       ensureDirectoryExists(directory);
       cb(null, directory);

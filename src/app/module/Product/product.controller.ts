@@ -48,7 +48,7 @@ const updateAProduct = catchAsync(async (req: Request, res: Response) => {
   // const data = JSON.parse(req.body.updatedValues)
 
   // Pass the productId from query and req.body and also pass the req object (or req.files) for file handling
-  const result = await ProductServices.updateAProduct(req?.query?.productId as string, req?.body?.updatedValues, req?.files);
+  const result = await ProductServices.updateAProduct(req?.query?.productId as string, req?.body, req?.files);
 
   sendResponse(res, {
     success: true,

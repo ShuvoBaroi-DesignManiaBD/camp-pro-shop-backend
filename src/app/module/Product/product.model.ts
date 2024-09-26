@@ -4,8 +4,8 @@ import { IProduct, IProductImage } from "./product.interface";
 // Define the product image schema
 const productImageSchema = new Schema<IProductImage>(
   {
-    url: { type: String },
-    alt: { type: String },
+    url: { type: String, required: true },
+    alt: { type: String, required: true },
   },
   { _id: false }
 );
@@ -16,18 +16,6 @@ const productSchema = new Schema<IProduct>(
     name: {
       type: String,
       required: [true, "Name is required"],
-      validate: {
-        validator: async function (value: string) {
-          // Specify the type of 'this' to use the Product model correctly
-          const Model = this.constructor as Model<IProduct>;
-          const existingProduct = await Model.findOne({
-            name: value,
-            isDeleted: false,
-          });
-          return !existingProduct;
-        },
-        message: "A product with this name already exists.",
-      },
     },
     price: { type: Number, required: [true, "Price is required"] },
     stockQuantity: {
@@ -47,7 +35,29 @@ const productSchema = new Schema<IProduct>(
   { timestamps: true }
 );
 
-// Create a Product model
+// Pre-save hook to validate uniqueness of the product name
+productSchema.pre<IProduct>("save", async function (next) {
+  const product = this; // 'this' refers to the current product document
+
+  // Check if the name is modified or the document is new
+  if (product.isNew || product.isModified("name")) {
+    const existingProduct = await Product.findOne({
+      name: product.name,
+      isDeleted: false,
+    });
+    
+    if (existingProduct) {
+      // If a product with the same name exists, throw an error
+      const error = new Error("A product with this name already exists.");
+      return next(error);
+    }
+  }
+
+  // Continue with saving if validation passes
+  next();
+});
+
+// Create a Product model with the IProduct interface
 const Product = model<IProduct>("Product", productSchema);
 
 // Export the Product model

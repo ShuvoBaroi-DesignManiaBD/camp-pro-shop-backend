@@ -3,6 +3,7 @@ import { userRoutes } from "../module/User/user.route";
 import { authRoutes } from "../module/Auth/auth.route";
 import { productRoutes } from "../module/Product/product.route";
 import { orderRoutes } from "../module/Order/order.route";
+import { statisticsRoutes } from "../module/Statistics/statistics.route";
 
 const router = Router();
 
@@ -22,6 +23,10 @@ const moduleRoutes = [
   {
     path: "/orders",
     route: orderRoutes,
+  },
+  {
+    path: "/statistics",
+    route: statisticsRoutes,
   },
 ];
 
