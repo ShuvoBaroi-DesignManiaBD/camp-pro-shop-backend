@@ -158,8 +158,8 @@ const updateAProduct = async (
 
 const updateProductsStock = async (products: cartItem[]) => {
   // Start a session and transaction
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  // const session = await mongoose.startSession();
+  // session.startTransaction();
 
   try {
     // Iterate over each product
@@ -170,7 +170,7 @@ const updateProductsStock = async (products: cartItem[]) => {
       const productId = new mongoose.Types.ObjectId(product.id);
 
       // Find the product using session
-      const foundProduct = await Product.findById(productId).session(session);
+      const foundProduct = await Product.findById(productId);
       console.log("Found Product:", foundProduct);
 
       if (!foundProduct) {
@@ -188,27 +188,34 @@ const updateProductsStock = async (products: cartItem[]) => {
           httpStatus.BAD_REQUEST,
           `Insufficient stock for product with ID ${product.id}!`
         );
+      } else if (newStockQuantity === 0){
+        // Update stock quantity using session
+      return await Product.findByIdAndUpdate(
+        productId,
+        { stockQuantity: newStockQuantity, isStock: false },
+        { new: true }
+      );
       }
 
       // Update stock quantity using session
-      await Product.findByIdAndUpdate(
+      return await Product.findByIdAndUpdate(
         productId,
         { stockQuantity: newStockQuantity },
-        { new: true, session }
+        { new: true }
       );
     }
 
     // Commit the transaction after all operations
-    await session.commitTransaction();
+    // await session.commitTransaction();
     console.log("Transaction committed successfully.");
   } catch (err) {
     // Abort the transaction in case of an error
-    await session.abortTransaction();
+    // await session.abortTransaction();
     console.error("Transaction aborted due to an error:", err);
     throw err; // Re-throw the error after aborting the transaction
   } finally {
     // End the session
-    session.endSession();
+    // session.endSession();
   }
 };
 

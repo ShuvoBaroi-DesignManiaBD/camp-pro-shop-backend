@@ -38,7 +38,6 @@ const SSLCommerzPayment = require("sslcommerz-lts");
 //   return { orders, totalOrders: totalMatchingDocuments };
 // };
 
-
 const getAllOrders = async (query: Record<string, unknown>) => {
   console.log(query);
 
@@ -62,7 +61,6 @@ const getAllOrders = async (query: Record<string, unknown>) => {
 
   return { orders, totalOrders: totalMatchingDocuments };
 };
-
 
 const getMyOrders = async (userId: Record<string, unknown>) => {
   console.log(userId);
@@ -359,11 +357,79 @@ const captureOrderForSSLCZ = async (token: any) => {
 
 // ===================== SSLCommerz ================
 
+// ===================== Cash On delivery ================
+const createOrderWithCash = async (order: IOrder) => {
+  let approvalUrl;
+
+  try {
+    // console.log(orderInPaypal, approvalUrl.split("=")[1]);
+    const id = new mongoose.Types.ObjectId().toString();
+    const TXNId = `TXN-${id}`;
+    const updatedOrder = { ...order, transactionId: TXNId, status: "pending" };
+    // console.log(approvalUrl);
+    const createdOrder = await Order.create(updatedOrder);
+    console.log(updatedOrder, "createdOrder==>", createdOrder, approvalUrl);
+    if (createdOrder) {
+      // Check for status codes 200 or 201
+      await ProductServices.updateProductsStock(createdOrder?.products);
+      approvalUrl = `${config.frontend_url}/order-success?gateway=cash&token=${id}`;
+    }
+    return approvalUrl;
+  } catch (err) {
+    // console.log(err);
+
+    throw new AppError(httpStatus.BAD_REQUEST, `Something went wrong!`);
+  }
+};
+
+const captureOrderForCash = async (token: any) => {
+  const TXNId = `TXN-${token}`;
+  try {
+    // Await the transaction query
+    const isOrderCreatedForCash = await Order.findOne({
+      transactionId: TXNId,
+    });
+    console.log("cash=>", isOrderCreatedForCash);
+
+    return isOrderCreatedForCash;
+    // if (isOrderCreatedForCash) {
+    //   // Await the product stock update
+    // } else {
+    //   throw new AppError(
+    //     httpStatus.NOT_FOUND,
+    //     "Order not found in the database!"
+    //   );
+    // }
+  } catch (err: any) {
+    console.error("Error capturing order:", err);
+
+    // Handle specific errors based on statusCode or error type
+    if (err?.statusCode === 404) {
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        "Order not found in the database!"
+      );
+    } else if (err?.statusCode === 422) {
+      const getOrder = await Order.findOne({ transactionId: `TXN-${token}` });
+      console.log("Order already captured: ", getOrder);
+      return getOrder;
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Something went wrong! ${err.message}`
+      );
+    }
+  }
+};
+// ===================== Cash On delivery ================
+
 export const orderServices = {
   createOrderWithPaypal,
   captureOrderForPaypal,
   createOrderWithSSLCZ,
   captureOrderForSSLCZ,
+  createOrderWithCash,
+  captureOrderForCash,
   getAllOrders,
   getMyOrders,
 };

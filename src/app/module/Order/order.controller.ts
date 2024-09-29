@@ -17,6 +17,8 @@ const createOrder = catchAsync(async (req: Request, res: Response) => {
     result = await orderServices.createOrderWithPaypal(payload);
   } else if (payload?.gateWay === 'sslcommerz') {
     result = await orderServices.createOrderWithSSLCZ(payload);
+  } else if (payload?.gateWay === 'cash') {
+    result = await orderServices.createOrderWithCash(payload);
   } else {
     // Throw error properly to be caught by catchAsync
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid data provided!");
@@ -63,6 +65,8 @@ const captureOrder = catchAsync(async (req: Request, res: Response) => {
     result = await orderServices.captureOrderForPaypal(payload?.token);
   } else if (payload?.gateway === 'sslcommerz') {
     result = await orderServices.captureOrderForSSLCZ(payload?.token);
+  } else if (payload?.gateway === 'cash') {
+    result = await orderServices.captureOrderForCash(payload?.token);
   } else {
     // Throw error properly to be caught by catchAsync
     throw new AppError(httpStatus.NOT_FOUND, "Order not found!");
